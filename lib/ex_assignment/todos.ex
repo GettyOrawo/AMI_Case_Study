@@ -48,7 +48,27 @@ defmodule ExAssignment.Todos do
     list_todos(:open)
     |> case do
       [] -> nil
-      todos -> Enum.take_random(todos, 1) |> List.first()
+      todos -> recommend_todo(todos)
+    end
+  end
+
+  #uses probability based on priority to recommend the next todo
+  defp recommend_todo(todos) do
+    randomized_value = todos |> Enum.reduce(0, fn %{priority: priority}, sum -> priority + sum end) |> :rand.uniform()
+    choose_todo(todos, randomized_value, 0)
+  end
+
+  defp choose_todo([todo], _, _), do: todo
+
+  defp choose_todo([todo | t], rand_value, acc) do
+    %{priority: priority} = todo
+
+    acc = acc - priority
+
+    if rand_value >= acc  do
+      todo
+    else
+      choose_todo(t, rand_value, acc)
     end
   end
     
