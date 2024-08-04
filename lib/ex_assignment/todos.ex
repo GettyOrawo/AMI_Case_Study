@@ -44,11 +44,20 @@ defmodule ExAssignment.Todos do
 
   ASSIGNMENT: ...
   """
-  def get_recommended() do
+  def generate_next_recommended() do
     list_todos(:open)
     |> case do
       [] -> nil
       todos -> Enum.take_random(todos, 1) |> List.first()
+    end
+  end
+    
+  def get_recommended() do
+    lookup = :ets.lookup(:recommendation_keep, :next_todo) |> List.first()
+
+    case lookup do
+      nil -> nil
+      {:next_todo, next} -> next
     end
   end
 
@@ -118,6 +127,8 @@ defmodule ExAssignment.Todos do
   """
   def delete_todo(%Todo{} = todo) do
     Repo.delete(todo)
+    regenerate_recommended(todo.id)
+    {:ok, todo}
   end
 
   @doc """
@@ -147,8 +158,24 @@ defmodule ExAssignment.Todos do
       from(t in Todo, where: t.id == ^id, update: [set: [done: true]])
       |> Repo.update_all([])
 
+    regenerate_recommended(id)
     :ok
   end
+
+  #checks if the completed todo was recommended and replaces it in cache if so
+  defp regenerate_recommended(checked_todo_id) do
+
+    current_recommended_todo_id = get_recommended() |> Map.get(:id)
+
+    if current_recommended_todo_id == unstringify(checked_todo_id) do
+      ExAssignment.Cache.insert()
+    end
+  end
+
+  #converts bitstring id to integer
+  defp unstringify(id) when is_bitstring(id), do: String.to_integer(id)
+  defp unstringify(id), do: id
+
 
   @doc """
   Marks the todo referenced by the given id as unchecked (not done).
@@ -164,6 +191,10 @@ defmodule ExAssignment.Todos do
       from(t in Todo, where: t.id == ^id, update: [set: [done: false]])
       |> Repo.update_all([])
 
+    if length(list_todos(:open)) == 1 do
+      ExAssignment.Cache.insert()
+    end
+    
     :ok
   end
 end

@@ -11,7 +11,7 @@ defmodule ExAssignment.TodosFixtures do
     {:ok, todo} =
       attrs
       |> Enum.into(%{
-        done: true,
+        done: false,
         priority: 42,
         title: "some title"
       })

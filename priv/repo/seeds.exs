@@ -10,6 +10,8 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
+ExAssignment.Repo.delete_all(ExAssignment.Todos.Todo)
+
 ExAssignment.Repo.insert!(%ExAssignment.Todos.Todo{
   title: "water flowers",
   priority: 60,
